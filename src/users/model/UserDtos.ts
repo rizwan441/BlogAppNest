@@ -1,8 +1,19 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength ,IsOptional} from 'class-validator';
+import { Exclude } from 'class-transformer';
+import { IsEmail, IsNotEmpty, IsString, MinLength ,IsOptional, IsEnum, IsNumber} from 'class-validator';
+import { BeforeInsert } from 'typeorm';
 // import { PartialType } from '@nestjs/mapped-types';
+export enum userRole{
+  Admin ="admin",
+  CheifEditor="cheifeditor",
+  Editor="editor",
+  User="user"
+
+}
 
 
 export class CreateUserDtos{
+  @IsNumber()
+  id:number
     @IsNotEmpty()
     @IsString()
     readonly name: string;
@@ -18,8 +29,12 @@ export class CreateUserDtos{
     @IsNotEmpty()
     @IsString()
     @MinLength(6)
-    readonly password: string;
-  }
+    @Exclude()
+   password: string;
+
+   @IsOptional()
+   @IsEnum(userRole)
+   readonly role?: userRole;  }
 
 
 

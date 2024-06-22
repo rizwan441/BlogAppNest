@@ -28,9 +28,12 @@ export class UsersService {
           throw new ConflictException(`Email '${createUserDto.email}' is already registered`);
         }
       }
-
-      const newUser = this.userRepository.create(createUserDto);
-      return await this.userRepository.save(newUser);
+      const hashpassword = await this.authservice.hashPasswordFun(createUserDto.password);
+      createUserDto.password = hashpassword;
+      const newUser = this.userRepository.create({
+        ...createUserDto,
+        role: createUserDto.role,
+      });      return await this.userRepository.save(newUser);
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -105,6 +108,43 @@ export class UsersService {
     // Remove the user
     await this.userRepository.remove(user);
     return user;
+  }
+
+  async logInUser(email: string, password: string): Promise<string> {
+    const user = await this.validateUser(email, password);
+    if (user) {
+      const jwtKey = await this.authservice.generateJwtPassword(user);
+      return jwtKey;
+    } else {
+      throw new HttpException(`Wrong credentials`, HttpStatus.UNAUTHORIZED);
+    }
+  }
+
+   async validateUser(email: string, password: string): Promise<UserEntity> {
+    const user = await this.userRepository.findOne({ where: { email } });
+    if (!user) {
+      throw new NotFoundException(`User with email ${email} not found`);
+    }
+
+    const passwordMatch = await this.authservice.comparePasswordFun(password, user.password);
+    if (passwordMatch) {
+      return user;
+    } else {
+      throw new HttpException(`Wrong credentials`, HttpStatus.UNAUTHORIZED);
+    }
+  }
+ async UpdateUserRole(id:number,user:UpdateUserDto){
+  try {
+    const use= await this.userRepository.update(id,user)
+     console.log(use  )
+     return use
+    
+    
+  } catch (error) {
+    throw NotFoundException
+  }
+
+
   }
 }
 
